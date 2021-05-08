@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{include "user-chart.fullname" .}}
+  labels:
+    {{- include "user-chart.labels" . | nindent 4}}
+spec:
+  replicas: {{.Values.replicaCount}}
+  selector:
+    matchLabels:
+      {{- include "user-chart.selectorLabels" . | nindent 6}}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        {{- include "user-chart.selectorLabels" . | nindent 8}}
+    spec:
+      containers:
+        - name: {{.Chart.Name}}-php
+          image: {{.Values.phpImage}}
+          ports:
+            - name: php-port
+              containerPort: 9000
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          livenessProbe:
+            tcpSocket:
+              port: php-port
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          readinessProbe:
+            tcpSocket:
+              port: php-port
+            initialDelaySeconds: 2
+            periodSeconds: 2
+        - name: {{.Chart.Name}}-nginx
+          image: {{.Values.nginxImage}}
+          ports:
+            - name: nginx-port
+              containerPort: 80
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: nginx-port
+            initialDelaySeconds: 2
+            periodSeconds: 2
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: nginx-port
+            initialDelaySeconds: 2
+            periodSeconds: 2

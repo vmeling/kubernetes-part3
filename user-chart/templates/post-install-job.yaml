@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-job"
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: post-install-job
+          image: {{.Values.phpImage}}
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-secret
+          command: ["php", "/var/www/arch.homework/bin/console", "d:m:m", "-n"]
